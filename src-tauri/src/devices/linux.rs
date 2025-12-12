@@ -46,15 +46,12 @@ pub fn get_block_devices() -> Result<Vec<BlockDevice>, String> {
             continue;
         }
 
-        // Skip system disks
         let dev_name = path.split('/').last().unwrap_or("");
+
+        // Mark as system disk instead of skipping (consistent with macOS behavior)
         let is_system = system_disks.iter().any(|sys| {
             sys.starts_with(dev_name) || dev_name.starts_with(sys)
         });
-
-        if is_system {
-            continue;
-        }
 
         let size: u64 = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
         if size == 0 {
@@ -80,7 +77,7 @@ pub fn get_block_devices() -> Result<Vec<BlockDevice>, String> {
             size_formatted: format_size(size),
             model,
             is_removable,
-            is_system: false,
+            is_system,
         });
     }
 
