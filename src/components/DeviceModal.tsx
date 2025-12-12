@@ -106,7 +106,7 @@ export function DeviceModal({ isOpen, onClose, onSelect }: DeviceModalProps) {
                       {device.is_removable && !device.is_system && <span className="removable-badge" style={{ marginLeft: 8 }}>Removable</span>}
                     </div>
                     <div className="list-item-subtitle">
-                      {device.path} • {device.size_formatted}
+                      {device.name} • {device.size_formatted}
                     </div>
                   </div>
                 </button>
@@ -133,7 +133,7 @@ export function DeviceModal({ isOpen, onClose, onSelect }: DeviceModalProps) {
             <p className="confirm-text">You are about to write to:</p>
             <div className="confirm-device">
               <strong>{selectedDevice.model || selectedDevice.name}</strong>
-              <span>{selectedDevice.path} ({selectedDevice.size_formatted})</span>
+              <span>{selectedDevice.name} ({selectedDevice.size_formatted})</span>
             </div>
             <p className="confirm-warning">ALL DATA WILL BE PERMANENTLY ERASED</p>
             <div className="confirm-actions">
