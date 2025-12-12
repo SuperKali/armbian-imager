@@ -4,12 +4,30 @@
 
 use std::process::Command;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 use crate::utils::format_size;
 
 use super::types::BlockDevice;
 
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 /// Get list of block devices on Windows
 pub fn get_block_devices() -> Result<Vec<BlockDevice>, String> {
+    #[cfg(target_os = "windows")]
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            "Get-Disk | Where-Object { $_.BusType -ne 'NVMe' -or $_.IsSystem -eq $false } | Select-Object Number, FriendlyName, Size, BusType | ConvertTo-Json",
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+        .map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+
+    #[cfg(not(target_os = "windows"))]
     let output = Command::new("powershell")
         .args([
             "-NoProfile",
@@ -80,6 +98,18 @@ pub fn get_block_devices() -> Result<Vec<BlockDevice>, String> {
 
 /// Get the system disk number
 fn get_system_disk() -> Option<i64> {
+    #[cfg(target_os = "windows")]
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            "(Get-Partition -DriveLetter C | Get-Disk).Number",
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+        .ok()?;
+
+    #[cfg(not(target_os = "windows"))]
     let output = Command::new("powershell")
         .args([
             "-NoProfile",
