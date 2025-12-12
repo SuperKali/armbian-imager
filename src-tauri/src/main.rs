@@ -1,0 +1,81 @@
+//! Armbian Imager - Flash Armbian OS images to SD cards and USB drives
+//!
+//! A cross-platform Tauri application for downloading and flashing
+//! Armbian images to removable media.
+
+// Prevents additional console window on Windows in release
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod commands;
+mod config;
+mod decompress;
+mod devices;
+mod download;
+mod flash;
+mod images;
+mod logging;
+mod utils;
+
+use commands::AppState;
+#[cfg(debug_assertions)]
+use tauri::Manager;
+
+use crate::utils::get_cache_dir;
+
+/// Clean up cached images from previous sessions
+fn cleanup_image_cache() {
+    let images_dir = get_cache_dir(config::app::NAME).join("images");
+
+    if images_dir.exists() {
+        if let Ok(entries) = std::fs::read_dir(&images_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    let _ = std::fs::remove_file(&path);
+                }
+            }
+        }
+    }
+}
+
+fn main() {
+    // Initialize logging system
+    logging::init();
+
+    // Clean up any leftover images from previous sessions
+    cleanup_image_cache();
+    log_info!("main", "Starting Armbian Imager");
+
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .manage(AppState::default())
+        .invoke_handler(tauri::generate_handler![
+            commands::board_queries::get_boards,
+            commands::board_queries::get_images_for_board,
+            commands::board_queries::get_block_devices,
+            commands::scraping::get_board_image_url,
+            commands::operations::request_write_authorization,
+            commands::operations::download_image,
+            commands::operations::flash_image,
+            commands::operations::delete_downloaded_image,
+            commands::progress::cancel_operation,
+            commands::progress::get_download_progress,
+            commands::progress::get_flash_progress,
+            commands::custom_image::select_custom_image,
+            commands::custom_image::check_needs_decompression,
+            commands::custom_image::decompress_custom_image,
+        ])
+        .setup(|app| {
+            #[cfg(debug_assertions)]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.open_devtools();
+                }
+            }
+            let _ = app; // Suppress unused warning in release
+            Ok(())
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}

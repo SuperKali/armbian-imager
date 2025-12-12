@@ -1,0 +1,152 @@
+/* ========================================
+   RESPONSIVE - Medium-large screens (< 900px)
+   ======================================== */
+@media (max-width: 900px) {
+  .header {
+    padding: 16px 24px;
+  }
+
+  .logo-main {
+    height: 42px;
+  }
+
+  .header-step-label {
+    font-size: 11px;
+  }
+
+  .header-step-indicator {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .header-step {
+    padding: 4px 10px;
+    gap: 5px;
+  }
+
+  .header-steps {
+    gap: 3px;
+    padding: 7px 10px;
+  }
+
+  .home-buttons-inline {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .home-button {
+    min-width: 180px;
+    height: 120px;
+    padding: 20px 24px;
+  }
+
+  .flash-header {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .flash-board-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .flash-info h2 {
+    font-size: 17px;
+  }
+
+  .flash-status {
+    padding: 18px;
+  }
+
+  .flash-status h3 {
+    font-size: 15px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - Medium screens (< 700px)
+   ======================================== */
+@media (max-width: 700px) {
+  .header {
+    padding: 12px 16px;
+  }
+
+  .logo-main {
+    height: 36px;
+  }
+
+  .header-step-label {
+    font-size: 10px;
+  }
+
+  .header-step-indicator {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+
+  .header-step {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .header-steps {
+    gap: 2px;
+    padding: 6px 8px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - Small screens (< 600px)
+   ======================================== */
+@media (max-width: 600px) {
+  .home-buttons-inline {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .home-button {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .home-write-button {
+    width: 100%;
+  }
+
+  .modal {
+    max-height: 95vh;
+    max-width: 98vw;
+    border-radius: 8px;
+  }
+
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .flash-board-image {
+    width: 70px;
+    height: 70px;
+  }
+
+  .flash-info h2 {
+    font-size: 15px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - Large screens (> 1200px)
+   ======================================== */
+@media (min-width: 1200px) {
+  .modal {
+    max-width: 950px;
+    max-height: 85vh;
+  }
+
+  .flash-container {
+    max-width: 700px;
+  }
+}

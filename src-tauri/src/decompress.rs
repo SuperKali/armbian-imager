@@ -1,0 +1,192 @@
+//! Decompression module
+//!
+//! Handles decompressing compressed image files (XZ, GZ, BZ2, ZST)
+//! using system tools or fallback Rust libraries.
+
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Read, Write};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use xz2::bufread::XzDecoder;
+
+use crate::config;
+use crate::download::DownloadState;
+use crate::utils::{find_binary, get_recommended_threads};
+use crate::{log_error, log_info, log_warn};
+
+const MODULE: &str = "decompress";
+
+/// Check if a file needs decompression based on extension
+pub fn needs_decompression(path: &Path) -> bool {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    matches!(ext.to_lowercase().as_str(), "xz" | "gz" | "bz2" | "zst")
+}
+
+/// Decompress using system xz command (much faster, uses multiple threads)
+pub fn decompress_with_system_xz(input_path: &Path, output_path: &Path) -> Result<(), String> {
+    use std::io::copy;
+    use std::process::Stdio;
+
+    let xz_path = find_binary("xz").ok_or("xz command not found")?;
+    let threads = get_recommended_threads();
+
+    log_info!(
+        MODULE,
+        "Using system xz at: {} with {} threads",
+        xz_path.display(),
+        threads
+    );
+
+    let mut child = Command::new(&xz_path)
+        .args(["-d", "-k", "-c"]) // decompress, keep original, output to stdout
+        .arg(format!("-T{}", threads))
+        .arg(input_path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| {
+            log_error!(MODULE, "Failed to spawn xz: {}", e);
+            format!("Failed to spawn xz: {}", e)
+        })?;
+
+    let mut stdout = child.stdout.take().ok_or("Failed to capture xz stdout")?;
+
+    let mut output_file =
+        File::create(output_path).map_err(|e| format!("Failed to create output file: {}", e))?;
+
+    copy(&mut stdout, &mut output_file)
+        .map_err(|e| format!("Failed to write decompressed data: {}", e))?;
+
+    let status = child
+        .wait()
+        .map_err(|e| format!("Failed to wait for xz: {}", e))?;
+
+    if status.success() {
+        log_info!(MODULE, "System xz decompression complete");
+        Ok(())
+    } else {
+        let _ = std::fs::remove_file(output_path);
+        log_error!(MODULE, "xz decompression failed");
+        Err("xz decompression failed".to_string())
+    }
+}
+
+/// Decompress using Rust xz2 library (slower, single-threaded fallback)
+pub fn decompress_with_rust_library(
+    input_path: &Path,
+    output_path: &Path,
+    state: &Arc<DownloadState>,
+) -> Result<(), String> {
+    let temp_file =
+        File::open(input_path).map_err(|e| format!("Failed to open temp file: {}", e))?;
+
+    let buf_reader = BufReader::with_capacity(config::download::DECOMPRESS_BUFFER_SIZE, temp_file);
+    let mut decoder = XzDecoder::new(buf_reader);
+
+    let output_file =
+        File::create(output_path).map_err(|e| format!("Failed to create output file: {}", e))?;
+
+    let mut buf_writer =
+        BufWriter::with_capacity(config::download::DECOMPRESS_BUFFER_SIZE, output_file);
+    let mut buffer = vec![0u8; config::download::CHUNK_SIZE];
+
+    loop {
+        if state.is_cancelled.load(Ordering::SeqCst) {
+            drop(buf_writer);
+            let _ = std::fs::remove_file(output_path);
+            return Err("Decompression cancelled".to_string());
+        }
+
+        let bytes_read = decoder
+            .read(&mut buffer)
+            .map_err(|e| format!("Decompression error: {}", e))?;
+
+        if bytes_read == 0 {
+            break;
+        }
+
+        buf_writer
+            .write_all(&buffer[..bytes_read])
+            .map_err(|e| format!("Failed to write decompressed data: {}", e))?;
+    }
+
+    buf_writer
+        .flush()
+        .map_err(|e| format!("Failed to flush output: {}", e))?;
+
+    Ok(())
+}
+
+/// Decompress a local file (for custom images)
+/// Returns the path to the decompressed file
+pub fn decompress_local_file(
+    input_path: &PathBuf,
+    state: &Arc<DownloadState>,
+) -> Result<PathBuf, String> {
+    let filename = input_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or("Invalid filename")?;
+
+    // Determine output filename (remove compression extension)
+    let output_filename = filename
+        .trim_end_matches(".xz")
+        .trim_end_matches(".gz")
+        .trim_end_matches(".bz2")
+        .trim_end_matches(".zst");
+
+    // Output to same directory as input
+    let output_path = input_path
+        .parent()
+        .ok_or("Invalid input path")?
+        .join(output_filename);
+
+    // Check if already decompressed
+    if output_path.exists() {
+        log_info!(
+            MODULE,
+            "Decompressed file already exists: {}",
+            output_path.display()
+        );
+        return Ok(output_path);
+    }
+
+    state.is_decompressing.store(true, Ordering::SeqCst);
+
+    // Get input file size for progress indication
+    if let Ok(metadata) = std::fs::metadata(input_path) {
+        state.total_bytes.store(metadata.len(), Ordering::SeqCst);
+    }
+
+    log_info!(
+        MODULE,
+        "Decompressing custom image: {} -> {}",
+        input_path.display(),
+        output_path.display()
+    );
+
+    // Only handle .xz for now (most common for Armbian)
+    if filename.ends_with(".xz") {
+        // Try system xz first, fall back to Rust library
+        if let Err(e) = decompress_with_system_xz(input_path, &output_path) {
+            log_warn!(
+                MODULE,
+                "System xz failed: {}, falling back to Rust library (slower)",
+                e
+            );
+            decompress_with_rust_library(input_path, &output_path, state)?;
+        }
+    } else {
+        return Err(format!(
+            "Unsupported compression format for: {}",
+            filename
+        ));
+    }
+
+    state.is_decompressing.store(false, Ordering::SeqCst);
+    log_info!(MODULE, "Decompression complete: {}", output_path.display());
+
+    Ok(output_path)
+}

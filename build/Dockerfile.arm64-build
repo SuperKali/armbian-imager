@@ -1,0 +1,21 @@
+FROM --platform=linux/arm64 rust:1.87-slim-bookworm
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y     libwebkit2gtk-4.1-dev     libayatana-appindicator3-dev     librsvg2-dev     patchelf     build-essential     curl     wget     file     libssl-dev     libgtk-3-dev     squashfs-tools     pkg-config     nodejs     npm     && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy project
+COPY . .
+
+# Install npm dependencies
+RUN npm install
+
+# Build frontend
+RUN npm run build
+
+# Build Tauri app for deb
+RUN cargo install tauri-cli --version "^2"
+RUN cargo tauri build --bundles deb
+
+CMD ["ls", "-la", "src-tauri/target/release/bundle/deb/"]

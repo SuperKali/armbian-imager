@@ -1,0 +1,80 @@
+export interface BoardInfo {
+  slug: string;
+  name: string;
+  image_count: number;
+  has_promoted: boolean;
+}
+
+export interface ImageInfo {
+  armbian_version: string;
+  distro_release: string;
+  kernel_branch: string;
+  image_variant: string;
+  preinstalled_application: string;
+  promoted: boolean;
+  file_url: string;
+  file_size: number;
+  download_repository: string;
+  // Custom image fields
+  is_custom?: boolean;
+  custom_path?: string;
+}
+
+export interface BlockDevice {
+  path: string;
+  name: string;
+  size: number;
+  size_formatted: string;
+  model: string;
+  is_removable: boolean;
+  is_system: boolean;
+}
+
+export interface DownloadProgress {
+  total_bytes: number;
+  downloaded_bytes: number;
+  is_decompressing: boolean;
+  progress_percent: number;
+  error: string | null;
+}
+
+export interface FlashProgress {
+  total_bytes: number;
+  written_bytes: number;
+  verified_bytes: number;
+  is_verifying: boolean;
+  progress_percent: number;
+  error: string | null;
+}
+
+export type Step = 'board' | 'image' | 'device' | 'flash';
+
+/**
+ * Manufacturer information for board categorization
+ */
+export interface Manufacturer {
+  id: string;
+  name: string;
+  color: string;
+  boardCount: number;
+  logo?: string;
+}
+
+/**
+ * Filter type for image list
+ */
+export type ImageFilterType = 'all' | 'stable' | 'nightly' | 'apps' | 'barebone';
+
+/**
+ * Modal type for app navigation
+ */
+export type ModalType = 'none' | 'manufacturer' | 'board' | 'image' | 'device';
+
+/**
+ * Custom image info from file picker
+ */
+export interface CustomImageInfo {
+  path: string;
+  name: string;
+  size: number;
+}

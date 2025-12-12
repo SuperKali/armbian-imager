@@ -1,0 +1,78 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Armbian Imager",
+  "version": "1.0.0",
+  "identifier": "com.armbian.imager",
+  "build": {
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Armbian Imager",
+        "width": 1100,
+        "height": 700,
+        "resizable": true,
+        "minWidth": 1050,
+        "minHeight": 575,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "macOSPrivateApi": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Flash Armbian OS images",
+    "longDescription": "Armbian Imager is a utility for flashing Armbian OS images to SD cards and USB drives for single board computers.",
+    "macOS": {
+      "entitlements": "./entitlements.plist",
+      "minimumSystemVersion": "10.15",
+      "dmg": {
+        "background": "./dmg-background.png",
+        "windowSize": {
+          "width": 540,
+          "height": 380
+        },
+        "appPosition": {
+          "x": 140,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 400,
+          "y": 170
+        }
+      }
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}
