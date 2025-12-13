@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Upload, ExternalLink, AlertCircle } from 'lucide-react';
-import { uploadLogs } from '../../hooks/useTauri';
-import { open } from '@tauri-apps/plugin-shell';
+import { uploadLogs, openUrl } from '../../hooks/useTauri';
 import QRCode from 'qrcode';
 
 interface ErrorDisplayProps {
@@ -45,7 +44,7 @@ export function ErrorDisplay({ error, onRetry, compact = false }: ErrorDisplayPr
   async function handleOpenUrl() {
     if (!pasteUrl) return;
     try {
-      await open(pasteUrl);
+      await openUrl(pasteUrl);
     } catch {
       window.open(pasteUrl, '_blank');
     }

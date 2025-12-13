@@ -15,6 +15,7 @@ use super::state::AppState;
 
 /// Request write authorization before starting the flash process
 /// This shows the authorization dialog (Touch ID on macOS) BEFORE downloading
+/// On Linux, if not root, this triggers pkexec to elevate and restart the app
 /// Returns true if authorized, false if user cancelled
 #[tauri::command]
 pub async fn request_write_authorization(device_path: String) -> Result<bool, String> {

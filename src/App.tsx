@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { ManufacturerModal, type Manufacturer } from './components/ManufacturerModal';
@@ -6,7 +6,7 @@ import { BoardModal } from './components/BoardModal';
 import { ImageModal } from './components/ImageModal';
 import { DeviceModal } from './components/DeviceModal';
 import { FlashProgress } from './components/FlashProgress';
-import { selectCustomImage, getBoards, startImagePrefetch } from './hooks/useTauri';
+import { selectCustomImage } from './hooks/useTauri';
 import { useDeviceMonitor } from './hooks/useDeviceMonitor';
 import type { BoardInfo, ImageInfo, BlockDevice, ModalType } from './types';
 import './styles/index.css';
@@ -21,7 +21,6 @@ function App() {
   const [selectedBoard, setSelectedBoard] = useState<BoardInfo | null>(null);
   const [selectedImage, setSelectedImage] = useState<ImageInfo | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<BlockDevice | null>(null);
-  const prefetchStarted = useRef(false);
 
   // Monitor selected device - clear if disconnected (only when not flashing)
   useDeviceMonitor(
@@ -29,22 +28,6 @@ function App() {
     useCallback(() => setSelectedDevice(null), []),
     !isFlashing
   );
-
-  // Start prefetching board images on app startup
-  useEffect(() => {
-    if (prefetchStarted.current) return;
-    prefetchStarted.current = true;
-
-    getBoards()
-      .then((boards) => {
-        const slugs = boards.map((b) => b.slug);
-        console.log(`Starting image prefetch for ${slugs.length} boards`);
-        return startImagePrefetch(slugs);
-      })
-      .catch((err) => {
-        console.error('Failed to start image prefetch:', err);
-      });
-  }, []);
 
   /**
    * Reset selections from a given step onwards.

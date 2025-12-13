@@ -66,10 +66,72 @@ fn get_binary_search_paths(name: &str) -> Vec<PathBuf> {
 }
 
 /// Get the cache directory for the application
+/// On Linux, when running as root via pkexec/sudo, uses the original user's cache directory
 pub fn get_cache_dir(app_name: &str) -> PathBuf {
+    #[cfg(target_os = "linux")]
+    {
+        // Check if running as root
+        let euid = unsafe { libc::geteuid() };
+        if euid == 0 {
+            // Try to get the original user's home directory
+            if let Some(home) = get_original_user_home() {
+                let cache_dir = PathBuf::from(home).join(".cache").join(app_name);
+                // Try to create the directory (may fail if permissions are wrong)
+                let _ = std::fs::create_dir_all(&cache_dir);
+                return cache_dir;
+            }
+        }
+    }
+
     dirs::cache_dir()
-        .unwrap_or_else(|| PathBuf::from("/tmp"))
+        .or_else(|| dirs::data_local_dir())
+        .or_else(|| std::env::temp_dir().parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(std::env::temp_dir)
         .join(app_name)
+}
+
+/// Get the original user's home directory when running as root via pkexec/sudo
+#[cfg(target_os = "linux")]
+fn get_original_user_home() -> Option<String> {
+    use std::ffi::CStr;
+
+    // Try PKEXEC_UID first (set by pkexec), then SUDO_UID
+    let uid = std::env::var("PKEXEC_UID")
+        .or_else(|_| std::env::var("SUDO_UID"))
+        .ok()
+        .and_then(|s| s.parse::<u32>().ok());
+
+    if let Some(uid) = uid {
+        unsafe {
+            let pw = libc::getpwuid(uid);
+            if !pw.is_null() {
+                let home_ptr = (*pw).pw_dir;
+                if !home_ptr.is_null() {
+                    if let Ok(home) = CStr::from_ptr(home_ptr).to_str() {
+                        return Some(home.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback: check SUDO_USER and get their home
+    if let Ok(sudo_user) = std::env::var("SUDO_USER") {
+        unsafe {
+            let user_cstr = std::ffi::CString::new(sudo_user).ok()?;
+            let pw = libc::getpwnam(user_cstr.as_ptr());
+            if !pw.is_null() {
+                let home_ptr = (*pw).pw_dir;
+                if !home_ptr.is_null() {
+                    if let Ok(home) = CStr::from_ptr(home_ptr).to_str() {
+                        return Some(home.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]

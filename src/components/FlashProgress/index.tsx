@@ -85,6 +85,8 @@ export function FlashProgress({
     setError(null);
 
     try {
+      // On Linux, if not root, this will trigger pkexec and restart the app
+      // The app will restart elevated and the user will need to re-select options
       const authorized = await requestWriteAuthorization(device.path);
       if (!authorized) {
         setError('Authorization cancelled by user');

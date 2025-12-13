@@ -27,6 +27,9 @@ chrono = "0.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Linux-specific dependencies for block device access
+libc = "0.2"
+# UDisks2 for privilege escalation via polkit
+udisks2 = "0.3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # macOS-specific dependencies

@@ -62,14 +62,17 @@ pub use linux::flash_image;
 #[cfg(target_os = "windows")]
 pub use windows::flash_image;
 
-// Re-export authorization function for macOS
+// Re-export authorization functions
 #[cfg(target_os = "macos")]
 pub use macos::request_authorization;
+#[cfg(target_os = "linux")]
+pub use linux::request_authorization;
 
 /// Request authorization before flashing (platform-specific)
 /// On macOS: Shows Touch ID / password dialog
-/// On Linux/Windows: No-op (authorization happens during flash)
-#[cfg(not(target_os = "macos"))]
+/// On Linux: If not root, launches pkexec and restarts the app elevated
+/// On Windows: No-op (authorization happens during flash)
+#[cfg(target_os = "windows")]
 pub fn request_authorization(_device_path: &str) -> Result<bool, String> {
     Ok(true)
 }

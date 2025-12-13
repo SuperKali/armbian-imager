@@ -4,10 +4,10 @@
 
 pub mod board_queries;
 pub mod custom_image;
-pub mod image_cache;
 pub mod operations;
 pub mod progress;
 pub mod scraping;
+pub mod system;
 mod state;
 
 // Re-export state for use in main.rs

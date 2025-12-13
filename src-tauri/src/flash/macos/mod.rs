@@ -1,7 +1,7 @@
 //! macOS-specific flash implementation
 //!
 //! Uses Security.framework AuthorizationCreate + authopen with -extauth
-//! This is the same approach used by Raspberry Pi Imager.
+//! for privilege escalation when writing to block devices.
 
 mod authorization;
 mod bindings;

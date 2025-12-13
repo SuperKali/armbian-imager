@@ -23,7 +23,7 @@ use tauri::Manager;
 
 use crate::utils::get_cache_dir;
 
-/// Clean up cached download images from previous sessions (not board images)
+/// Clean up cached download images from previous sessions
 fn cleanup_download_cache() {
     let images_dir = get_cache_dir(config::app::NAME).join("images");
 
@@ -36,14 +36,6 @@ fn cleanup_download_cache() {
                 }
             }
         }
-    }
-}
-
-/// Clean up board images cache on app exit
-fn cleanup_board_images_cache() {
-    log_info!("main", "Cleaning up board images cache on exit");
-    if let Err(e) = commands::image_cache::clear_cache() {
-        log_error!("main", "Failed to clear board images cache: {}", e);
     }
 }
 
@@ -62,9 +54,6 @@ fn main() {
     // Clean up any leftover download images from previous sessions
     cleanup_download_cache();
 
-    // Initialize board image cache
-    commands::image_cache::init_cache();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -74,7 +63,6 @@ fn main() {
             commands::board_queries::get_images_for_board,
             commands::board_queries::get_block_devices,
             commands::scraping::get_board_image_url,
-            commands::scraping::start_image_prefetch,
             commands::operations::request_write_authorization,
             commands::operations::download_image,
             commands::operations::flash_image,
@@ -85,6 +73,7 @@ fn main() {
             commands::custom_image::select_custom_image,
             commands::custom_image::check_needs_decompression,
             commands::custom_image::decompress_custom_image,
+            commands::system::open_url,
             paste::upload::upload_logs,
         ])
         .setup(|app| {
@@ -96,11 +85,6 @@ fn main() {
             }
             let _ = app; // Suppress unused warning in release
             Ok(())
-        })
-        .on_window_event(|_window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
-                cleanup_board_images_cache();
-            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
