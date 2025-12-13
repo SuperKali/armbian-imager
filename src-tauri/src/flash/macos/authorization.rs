@@ -33,7 +33,6 @@ pub fn request_authorization(device_path: &str) -> Result<bool, String> {
     let raw_device = device_path.replace("/dev/disk", "/dev/rdisk");
 
     unsafe {
-        // Build the right name exactly like RPi Imager: "sys.openfile.readwrite./dev/rdiskX"
         let right_name = format!("sys.openfile.readwrite.{}", raw_device);
         let right_name_cstr = std::ffi::CString::new(right_name.clone()).unwrap();
 

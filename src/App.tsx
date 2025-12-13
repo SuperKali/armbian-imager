@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { ManufacturerModal, type Manufacturer } from './components/ManufacturerModal';
@@ -7,6 +7,7 @@ import { ImageModal } from './components/ImageModal';
 import { DeviceModal } from './components/DeviceModal';
 import { FlashProgress } from './components/FlashProgress';
 import { selectCustomImage, getBoards, startImagePrefetch } from './hooks/useTauri';
+import { useDeviceMonitor } from './hooks/useDeviceMonitor';
 import type { BoardInfo, ImageInfo, BlockDevice, ModalType } from './types';
 import './styles/index.css';
 
@@ -21,6 +22,13 @@ function App() {
   const [selectedImage, setSelectedImage] = useState<ImageInfo | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<BlockDevice | null>(null);
   const prefetchStarted = useRef(false);
+
+  // Monitor selected device - clear if disconnected (only when not flashing)
+  useDeviceMonitor(
+    selectedDevice,
+    useCallback(() => setSelectedDevice(null), []),
+    !isFlashing
+  );
 
   // Start prefetching board images on app startup
   useEffect(() => {
