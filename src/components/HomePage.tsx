@@ -12,7 +12,6 @@ interface HomePageProps {
   onChooseImage: () => void;
   onChooseDevice: () => void;
   onChooseCustomImage: () => void;
-  onWrite: () => void;
 }
 
 export function HomePage({
@@ -25,9 +24,7 @@ export function HomePage({
   onChooseImage,
   onChooseDevice,
   onChooseCustomImage,
-  onWrite,
 }: HomePageProps) {
-  const canWrite = selectedBoard && selectedImage && selectedDevice;
   const isCustomImage = selectedImage?.is_custom;
 
   return (
@@ -111,16 +108,6 @@ export function HomePage({
             )}
           </button>
         </div>
-      </div>
-
-      <div className="home-write-section">
-        <button
-          className="home-write-button"
-          onClick={onWrite}
-          disabled={!canWrite}
-        >
-          WRITE
-        </button>
       </div>
 
       <div className="home-custom-section">

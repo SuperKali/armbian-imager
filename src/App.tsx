@@ -64,6 +64,8 @@ function App() {
   function handleDeviceSelect(device: BlockDevice) {
     setSelectedDevice(device);
     setActiveModal('none');
+    // Start flashing immediately after device selection
+    setIsFlashing(true);
   }
 
   async function handleCustomImage() {
@@ -99,14 +101,6 @@ function App() {
     }
   }
 
-  function handleWrite() {
-    // For custom images, we only need the image and device
-    const hasValidImage = selectedImage && (selectedImage.is_custom || selectedBoard);
-    if (hasValidImage && selectedDevice) {
-      setIsFlashing(true);
-    }
-  }
-
   function handleComplete() {
     setIsFlashing(false);
     resetSelectionsFrom('manufacturer'); // Reset all selections
@@ -137,7 +131,6 @@ function App() {
             onChooseImage={() => setActiveModal('image')}
             onChooseDevice={() => setActiveModal('device')}
             onChooseCustomImage={handleCustomImage}
-            onWrite={handleWrite}
           />
         ) : (
           selectedBoard && selectedImage && selectedDevice && (
