@@ -130,7 +130,7 @@ export function useFlashOperation({
   }, []);
 
   /** Whether the current image uses QDL (Qualcomm EDL) flashing */
-  const isQdlMode = image.flash_method === 'qdl';
+  const isQdlMode = image.format === 'qdl';
 
   /**
    * Check device connection and trigger disconnect handler if missing
@@ -275,7 +275,9 @@ export function useFlashOperation({
     }, POLLING.DOWNLOAD_PROGRESS);
 
     try {
-      const path = await downloadImage(image.file_url, image.file_url_sha);
+      // direct_url carries the full filename; file_url is the pretty
+      // mirror-selector URL (legacy redi_url) and has no extension.
+      const path = await downloadImage(image.direct_url, image.sha_url);
       setImagePath(path);
       if (intervalRef.current) clearInterval(intervalRef.current);
       startFlash(path);
