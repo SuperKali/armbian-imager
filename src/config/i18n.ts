@@ -25,7 +25,7 @@ export interface LanguageMetadata {
  */
 const LANGUAGES: LanguageMetadata[] = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'cs', name: 'Czech', flag: '🇽🇽' },
+  { code: 'cs', name: 'Czech', flag: '🇨🇿' },
   { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
   { code: 'es', name: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
